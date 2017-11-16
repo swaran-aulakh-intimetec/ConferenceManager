@@ -1,6 +1,7 @@
 package com.intimetec.conferencemanager.ui.login;
 
 import android.app.ProgressDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
@@ -10,11 +11,13 @@ import android.widget.EditText;
 import android.widget.Toast;
 
 import com.intimetec.conferencemanager.R;
+import com.intimetec.conferencemanager.constant.PreferenceConstant;
 import com.intimetec.conferencemanager.data.UserDataSource;
 import com.intimetec.conferencemanager.data.remote.UserRemoteDataSource;
 import com.intimetec.conferencemanager.model.user.User;
-import com.intimetec.conferencemanager.util.schedulers.BaseSchedulerProvider;
-import com.intimetec.conferencemanager.util.schedulers.ImmediateSchedulerProvider;
+import com.intimetec.conferencemanager.preference.PreferenceManager;
+import com.intimetec.conferencemanager.ui.BaseActivity;
+import com.intimetec.conferencemanager.ui.booking.HomeActivity;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -28,7 +31,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 /**
  * A login screen that offers login via email/password.
  */
-public class LoginActivity extends AppCompatActivity {
+public class LoginActivity extends BaseActivity {
 
     @BindView(R.id.email_login)
     EditText mEmailEditTxt;
@@ -38,11 +41,6 @@ public class LoginActivity extends AppCompatActivity {
 
     @BindView(R.id.btn_login)
     Button mSignInBtn;
-
-    private ProgressDialog mProgressDialog;
-
-    @NonNull
-    private BaseSchedulerProvider mSchedulerProvider;
 
     @NonNull
     private UserDataSource mUserDataSource;
@@ -56,12 +54,6 @@ public class LoginActivity extends AppCompatActivity {
         setContentView(R.layout.activity_login);
         ButterKnife.bind(this);
 
-        mProgressDialog = new ProgressDialog(LoginActivity.this,
-                R.style.AppTheme_Dark_Dialog);
-        mProgressDialog.setIndeterminate(true);
-        mProgressDialog.setMessage("Authenticating...");
-
-        mSchedulerProvider = checkNotNull(new ImmediateSchedulerProvider(), "schedulerProvider cannot be null");
         mUserDataSource = checkNotNull(UserRemoteDataSource.getInstance(), "userDataSource cannot be null");
         mCompositeDisposable = new CompositeDisposable();
 
@@ -81,15 +73,15 @@ public class LoginActivity extends AppCompatActivity {
     public boolean validateLogin(String email, String password) {
         boolean valid = true;
 
-        if (TextUtils.isEmpty(email) || !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-            mEmailEditTxt.setError("enter a valid email address");
+        if (TextUtils.isEmpty(email)) {
+            mEmailEditTxt.setError(getString(R.string.error_field_required));
             valid = false;
         } else {
             mEmailEditTxt.setError(null);
         }
 
         if (password.isEmpty() || password.length() < 4) {
-            mPasswordEditTxt.setError("minimum 4 characters");
+            mPasswordEditTxt.setError(getString(R.string.error_invalid_password));
             valid = false;
         } else {
             mPasswordEditTxt.setError(null);
@@ -99,7 +91,7 @@ public class LoginActivity extends AppCompatActivity {
 
     private void login(String email, String password) {
         mCompositeDisposable.clear();
-        showProgress();
+        showProgressDialog();
 
         mCompositeDisposable.add(mUserDataSource
                 .getUser(email, password)
@@ -111,55 +103,28 @@ public class LoginActivity extends AppCompatActivity {
                         // onError
                         this::onLoginFailed,
                         // onCompleted
-                        () -> hideProgress()));
-
-        /*mUserDataSource
-                .getUser(email, password)
-                .observeOn(mSchedulerProvider.io())
-                .subscribeOn(mSchedulerProvider.ui())
-                .subscribe(new Observer<User>() {
-                    @Override
-                    public void onSubscribe(@io.reactivex.annotations.NonNull Disposable d) {
-                        showProgress();
-                    }
-
-                    @Override
-                    public void onNext(@io.reactivex.annotations.NonNull User user) {
-                        onLoginSuccess();
-                    }
-
-                    @Override
-                    public void onError(@io.reactivex.annotations.NonNull Throwable e) {
-                        onLoginFailed();
-                    }
-
-                    @Override
-                    public void onComplete() {
-
-                    }
-                });*/
+                        () -> hideProgressDialog()));
 
     }
 
     private void onLoginSuccess(User user) {
-        hideProgress();
         mSignInBtn.setEnabled(true);
         Toast.makeText(LoginActivity.this, user.getMessage(), Toast.LENGTH_LONG).show();
+
+        PreferenceManager.saveObject(LoginActivity.this, PreferenceConstant.USER_KEY, user);
+        PreferenceManager.setFlag(LoginActivity.this, PreferenceConstant.HAS_LOGIN, true);
+        sendToHomeActivity();
     }
 
     private void onLoginFailed(@NonNull Throwable throwable) {
-        hideProgress();
         mSignInBtn.setEnabled(true);
         Toast.makeText(LoginActivity.this, throwable.getLocalizedMessage(), Toast.LENGTH_LONG).show();
     }
 
-    private void showProgress() {
-        mProgressDialog.show();
+    private void sendToHomeActivity() {
+        Intent intent = new Intent(this, HomeActivity.class);
+        startActivity(intent);
+        finish();
     }
-
-    private void hideProgress() {
-        mProgressDialog.hide();
-    }
-
 }
 

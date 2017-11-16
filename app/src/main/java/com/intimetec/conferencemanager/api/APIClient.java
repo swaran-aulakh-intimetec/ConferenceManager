@@ -9,7 +9,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 
 public class APIClient {
 
-    public static final String BASE_URL = "http://localhost:8080/HRMRest";
+    public static final String BASE_URL = "http://10.0.2.2:8080/HRMRest/";
 
     private retrofit2.Retrofit.Builder adapterBuilder;
 

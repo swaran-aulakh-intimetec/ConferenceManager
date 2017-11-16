@@ -14,4 +14,7 @@
     <color name="base">#AAAAAA</color>
     <color name="iron">#CCCCCC</color>
     <color name="white">#FFFFFF</color>
+
+    <color name="participants">#999999</color>
+    <color name="title">#222222</color>
 </resources>

@@ -23,9 +23,13 @@
             </intent-filter>
         </activity>
         <activity
-            android:theme="@style/AppTheme.Dark"
             android:name=".ui.login.LoginActivity"
-            android:label="@string/title_activity_login"></activity>
+            android:label="@string/title_activity_login"
+            android:theme="@style/AppTheme.Dark" />
+        <activity
+            android:name=".ui.booking.HomeActivity"
+            android:label="@string/title_activity_home"
+            android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>
 
 </manifest>
